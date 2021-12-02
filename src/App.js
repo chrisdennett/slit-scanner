@@ -2,10 +2,12 @@ import { useRef } from "react";
 import { WebcamFrameGrabber } from "./comps/WebcamFrameGrabber";
 import "./styles.css";
 
+const modeOptions = ["staticImageMaker", "scrollRight", "scrollLeft"];
+
 export default function App() {
   const msPerFrame = 25;
   const sliceWidth = 1;
-  const isScrolling = true;
+  const currentMode = modeOptions[1];
 
   const slicePositionCanvasRef = useRef();
   const slitScanCanvasRef = useRef();
@@ -47,8 +49,15 @@ export default function App() {
       currXRef.current = 0;
     }
 
-    if (isScrolling) {
-      drawScrolledSliceeToCanvas({
+    if (currentMode === "scrollRight") {
+      drawScrolledRightSliceToCanvas({
+        sourceCanvas: frameCanvas,
+        targetCanvas: slitScanCanvas,
+        sliceWidth: sliceWidth,
+        targetX: sliceX,
+      });
+    } else if (currentMode === "scrollLeft") {
+      drawScrolledLeftSliceToCanvas({
         sourceCanvas: frameCanvas,
         targetCanvas: slitScanCanvas,
         sliceWidth: sliceWidth,
@@ -83,7 +92,7 @@ export default function App() {
   );
 }
 
-const drawScrolledSliceeToCanvas = ({
+const drawScrolledRightSliceToCanvas = ({
   sourceCanvas,
   targetCanvas,
   sliceWidth,
@@ -100,6 +109,7 @@ const drawScrolledSliceeToCanvas = ({
   const targW = sliceWidth;
   const targH = srcH;
 
+  // draw all of canvas over by one slice width
   ctx.drawImage(
     targetCanvas,
     0,
@@ -107,6 +117,48 @@ const drawScrolledSliceeToCanvas = ({
     targetCanvas.width,
     targetCanvas.height,
     sliceWidth,
+    0,
+    targetCanvas.width,
+    targetCanvas.height
+  );
+
+  ctx.drawImage(
+    sourceCanvas,
+    srcX,
+    srcY,
+    srcW,
+    srcH,
+    targX,
+    targY,
+    targW,
+    targH
+  );
+};
+
+const drawScrolledLeftSliceToCanvas = ({
+  sourceCanvas,
+  targetCanvas,
+  sliceWidth,
+}) => {
+  const ctx = targetCanvas.getContext("2d");
+
+  const canvasCenterX = sourceCanvas.width / 2;
+  const srcX = canvasCenterX - sliceWidth / 2;
+  const srcY = 0;
+  const srcW = sliceWidth;
+  const srcH = sourceCanvas.height;
+  const targX = targetCanvas.width - sliceWidth;
+  const targY = 0;
+  const targW = sliceWidth;
+  const targH = srcH;
+
+  ctx.drawImage(
+    targetCanvas,
+    0,
+    0,
+    targetCanvas.width,
+    targetCanvas.height,
+    -1,
     0,
     targetCanvas.width,
     targetCanvas.height
