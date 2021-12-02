@@ -1,0 +1,107 @@
+/*
+  1. Use a more-intuitive box-sizing model.
+*/
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+/*
+  2. Remove default margin
+*/
+* {
+  margin: 0;
+}
+/*
+  3. Allow percentage-based heights in the application
+*/
+html,
+body {
+  height: 100%;
+}
+/*
+  Typographic tweaks!
+  4. Add accessible line-height
+  5. Improve text rendering
+*/
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+/*
+  6. Improve media defaults
+*/
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+/*
+  7. Remove built-in form typography styles
+*/
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+/*
+  8. Avoid text overflows
+*/
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+/*
+  9. Create a root stacking context
+*/
+#root,
+#__next {
+  isolation: isolate;
+}
+
+/* CHRIS STARTS HERE */
+
+:root {
+  --shadow-color: 0deg 0% 15%;
+  --shadow-elevation-low: 0.3px 0.5px 0.5px hsl(var(--shadow-color) / 0.84),
+    0.4px 0.8px 0.8px -2px hsl(var(--shadow-color) / 0.63),
+    1.3px 2.5px 2.5px -4.1px hsl(var(--shadow-color) / 0.41);
+  --shadow-elevation-medium: 0.3px 0.5px 0.5px hsl(var(--shadow-color) / 0.89),
+    0.7px 1.3px 1.3px -1.3px hsl(var(--shadow-color) / 0.72),
+    2.2px 4.4px 4.4px -2.7px hsl(var(--shadow-color) / 0.55),
+    6.3px 12.5px 12.5px -4.1px hsl(var(--shadow-color) / 0.38);
+  --shadow-elevation-high: 0.3px 0.5px 0.5px hsl(var(--shadow-color) / 0.82),
+    1px 2px 2px -0.6px hsl(var(--shadow-color) / 0.74),
+    2.2px 4.4px 4.4px -1.2px hsl(var(--shadow-color) / 0.67),
+    4.5px 9px 9px -1.7px hsl(var(--shadow-color) / 0.59),
+    8.5px 17px 17px -2.3px hsl(var(--shadow-color) / 0.51),
+    14.9px 29.8px 29.7px -2.9px hsl(var(--shadow-color) / 0.43),
+    24.4px 48.7px 48.6px -3.5px hsl(var(--shadow-color) / 0.35),
+    37.5px 75px 74.8px -4.1px hsl(var(--shadow-color) / 0.27);
+}
+
+.app {
+  background: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  /* border: 1px solid red; */
+  max-width: 1000px;
+  border-radius: 10px;
+
+  box-shadow: var(--shadow-elevation-high);
+}
