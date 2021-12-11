@@ -1,12 +1,18 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { WebcamFrameGrabber } from "./comps/WebcamFrameGrabber";
 import "./styles.css";
+import {
+  drawPositionSliceCanvas,
+  drawSliceToScrolledCanvas,
+  drawSwipeRightCanvas,
+} from "./utils/canvasFunctions";
 
-const modeOptions = ["staticImageMaker", "scrollRight", "scrollLeft"];
+const modeOptions = ["swipeRight", "scrollRight", "scrollLeft"];
 
 export default function App() {
-  const msPerFrame = 25;
-  const sliceWidth = 1;
+  const [sliceWidth, setSliceWidth] = useState(1);
+  const [msPerFrame, setMsPerFrame] = useState(22);
+  const [isReflected, setIsReflected] = useState(true);
   const currentMode = modeOptions[1];
 
   const slicePositionCanvasRef = useRef();
@@ -28,11 +34,10 @@ export default function App() {
     frameCanvas.width = frameWidth;
     frameCanvas.height = frameHeight;
     const frameCtx = frameCanvas.getContext("2d");
-    const ctx = frameCanvas.getContext("2d");
 
     // draw webcam video to temp canvas to flip it
-    ctx.translate(frameCanvas.width, 0);
-    ctx.scale(-1, 1);
+    frameCtx.translate(frameCanvas.width, 0);
+    frameCtx.scale(-1, 1);
     frameCtx.drawImage(video, 0, 0);
 
     // create slit scan
@@ -42,35 +47,65 @@ export default function App() {
       slitScanCanvas.height = frameHeight;
     }
 
-    const sliceX = currXRef.current;
-
+    // use a refence to keep track of xPos
     currXRef.current += sliceWidth;
     if (currXRef.current > slitScanCanvas.width) {
       currXRef.current = 0;
     }
 
+    const sliceX = currXRef.current;
+
     if (currentMode === "scrollRight") {
-      drawScrolledRightSliceToCanvas({
+      drawSliceToScrolledCanvas({
         sourceCanvas: frameCanvas,
         targetCanvas: slitScanCanvas,
         sliceWidth: sliceWidth,
         targetX: sliceX,
+        direction: "scrollRight",
+        isReflected,
       });
     } else if (currentMode === "scrollLeft") {
-      drawScrolledLeftSliceToCanvas({
+      drawSliceToScrolledCanvas({
         sourceCanvas: frameCanvas,
         targetCanvas: slitScanCanvas,
         sliceWidth: sliceWidth,
         targetX: sliceX,
+        direction: "scrollLeft",
+        isReflected,
       });
     } else {
-      drawSliceToCanvas({
+      drawSwipeRightCanvas({
         sourceCanvas: frameCanvas,
         targetCanvas: slitScanCanvas,
         sliceWidth: sliceWidth,
         targetX: sliceX,
+        isReflected,
       });
     }
+
+    // Reflection
+    // if (isReflected) {
+    //   const ctx = slitScanCanvas.getContext("2d");
+    //   ctx.save();
+    //   if (isReflected) {
+    //     ctx.scale(1, -1);
+    //     ctx.translate(0, -slitScanCanvas.height);
+    //     const reflectHeight = slitScanCanvas.height / 2;
+    //     const reflectWidth = slitScanCanvas.width;
+    //     ctx.drawImage(
+    //       slitScanCanvas,
+    //       0,
+    //       0,
+    //       reflectWidth,
+    //       reflectHeight,
+    //       0,
+    //       0,
+    //       reflectWidth,
+    //       reflectHeight
+    //     );
+    //   }
+    //   ctx.restore();
+    // }
 
     // reference Canvas
     const slicePositionCanvas = slicePositionCanvasRef.current;
@@ -79,170 +114,50 @@ export default function App() {
       targetCanvas: slicePositionCanvas,
       sliceWidth,
       canvasWidth: 500,
+      isReflected,
     });
   };
 
   return (
     <div className="app">
+      <div style={{ color: "white" }}>
+        <div>
+          isReflected:
+          <input
+            type="checkbox"
+            min={1}
+            max={300}
+            value={isReflected}
+            onChange={(e) => setIsReflected(e.target.checked)}
+          />
+        </div>
+        <div>
+          sliceWidth:
+          <input
+            type="range"
+            min={1}
+            max={300}
+            value={sliceWidth}
+            onChange={(e) => setSliceWidth(e.target.value)}
+          />
+        </div>
+        <div>
+          msPerFrame:
+          <input
+            type="range"
+            min={1}
+            max={100}
+            value={msPerFrame}
+            onChange={(e) => setMsPerFrame(e.target.value)}
+          />
+          {msPerFrame}
+        </div>
+      </div>
+
       <canvas ref={slitScanCanvasRef} />
-      <canvas ref={slicePositionCanvasRef} style={{ display: "none2" }} />
+      <canvas ref={slicePositionCanvasRef} style={{ display: "none" }} />
 
       <WebcamFrameGrabber onFrame={onFrame} frameInterval={msPerFrame} />
     </div>
   );
 }
-
-const drawScrolledRightSliceToCanvas = ({
-  sourceCanvas,
-  targetCanvas,
-  sliceWidth,
-}) => {
-  const ctx = targetCanvas.getContext("2d");
-
-  const canvasCenterX = sourceCanvas.width / 2;
-  const srcX = canvasCenterX - sliceWidth / 2;
-  const srcY = 0;
-  const srcW = sliceWidth;
-  const srcH = sourceCanvas.height;
-  const targX = 0;
-  const targY = 0;
-  const targW = sliceWidth;
-  const targH = srcH;
-
-  // draw all of canvas over by one slice width
-  ctx.drawImage(
-    targetCanvas,
-    0,
-    0,
-    targetCanvas.width,
-    targetCanvas.height,
-    sliceWidth,
-    0,
-    targetCanvas.width,
-    targetCanvas.height
-  );
-
-  ctx.drawImage(
-    sourceCanvas,
-    srcX,
-    srcY,
-    srcW,
-    srcH,
-    targX,
-    targY,
-    targW,
-    targH
-  );
-};
-
-const drawScrolledLeftSliceToCanvas = ({
-  sourceCanvas,
-  targetCanvas,
-  sliceWidth,
-}) => {
-  const ctx = targetCanvas.getContext("2d");
-
-  const canvasCenterX = sourceCanvas.width / 2;
-  const srcX = canvasCenterX - sliceWidth / 2;
-  const srcY = 0;
-  const srcW = sliceWidth;
-  const srcH = sourceCanvas.height;
-  const targX = targetCanvas.width - sliceWidth;
-  const targY = 0;
-  const targW = sliceWidth;
-  const targH = srcH;
-
-  ctx.drawImage(
-    targetCanvas,
-    0,
-    0,
-    targetCanvas.width,
-    targetCanvas.height,
-    -1,
-    0,
-    targetCanvas.width,
-    targetCanvas.height
-  );
-
-  ctx.drawImage(
-    sourceCanvas,
-    srcX,
-    srcY,
-    srcW,
-    srcH,
-    targX,
-    targY,
-    targW,
-    targH
-  );
-};
-
-const drawSliceToCanvas = ({
-  sourceCanvas,
-  targetCanvas,
-  sliceWidth,
-  targetX = null,
-}) => {
-  const ctx = targetCanvas.getContext("2d");
-
-  const canvasCenterX = sourceCanvas.width / 2;
-  const srcX = canvasCenterX - sliceWidth / 2;
-  const srcY = 0;
-  const srcW = sliceWidth;
-  const srcH = sourceCanvas.height;
-  const targX = targetX !== null ? targetX : srcX;
-  const targY = 0;
-  const targW = sliceWidth;
-  const targH = srcH;
-
-  ctx.drawImage(
-    sourceCanvas,
-    srcX,
-    srcY,
-    srcW,
-    srcH,
-    targX,
-    targY,
-    targW,
-    targH
-  );
-};
-
-const drawPositionSliceCanvas = ({
-  sourceCanvas,
-  targetCanvas,
-  canvasWidth,
-  sliceWidth,
-}) => {
-  if (!sourceCanvas || !targetCanvas) return;
-
-  const ctx = targetCanvas.getContext("2d");
-  targetCanvas.width = canvasWidth ? canvasWidth : sourceCanvas.width;
-  const wToHeightRatio = sourceCanvas.height / sourceCanvas.width;
-  targetCanvas.height = canvasWidth
-    ? canvasWidth * wToHeightRatio
-    : sourceCanvas.height;
-
-  const scale = targetCanvas.width / sourceCanvas.width;
-  const scaledWidth = sliceWidth * scale;
-  const canvasCenterX = targetCanvas.width / 2;
-  const sliceX = canvasCenterX - scaledWidth / 2;
-
-  ctx.save();
-  ctx.scale(scale, scale);
-  ctx.drawImage(sourceCanvas, 0, 0);
-  ctx.restore();
-
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-
-  ctx.fillRect(0, 0, sliceX, targetCanvas.height);
-  ctx.fillRect(
-    sliceX + scaledWidth,
-    0,
-    targetCanvas.width - sliceX + scaledWidth,
-    targetCanvas.height
-  );
-
-  ctx.fillStyle = "rgba(255,0,0,1)";
-  ctx.fillRect(sliceX, 0, scaledWidth, targetCanvas.height);
-};
